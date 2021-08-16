@@ -7,6 +7,7 @@ app = Flask(__name__)
 # Connect to Database
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///cafes.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+SECRET_KEY = "TopSecretAPIKey"
 db = SQLAlchemy(app)
 
 
@@ -120,7 +121,7 @@ def add_cafe():
 
 
 # HTTP PUT/PATCH - Update Record
-@app.route('/update-price/<int:cafe_id>', methods=["GET", "POST"])
+@app.route('/update-price/<int:cafe_id>', methods=["PATCH"])
 def update_cafe(cafe_id):
     all_cafes = db.session.query(Cafe).all()
     for cafe in all_cafes:
@@ -134,6 +135,20 @@ def update_cafe(cafe_id):
 
 
 # HTTP DELETE - Delete Record
+# http://127.0.0.1:5000/report-closed/21?apikey=TopSecretAPIKey
+@app.route('/report-closed/<int:cafe_id>', methods=["DELETE"])
+def delete_cafe(cafe_id):
+    apikey = request.args.get("apikey")
+    if SECRET_KEY == apikey:
+        selected_cafe = Cafe.query.get(cafe_id)
+        if selected_cafe:
+            db.session.delete(selected_cafe)
+            db.session.commit()
+            return jsonify(response={"delete": "Recorde deleted"})
+        else:
+            return jsonify(response={"no_record": "Recorde not found"})
+    else:
+        return jsonify(response={"apikey_error": "API key is wrong!"})
 
 
 if __name__ == '__main__':
